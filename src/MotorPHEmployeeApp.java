@@ -1,201 +1,500 @@
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.*;
+import java.util.*;
 
 public class MotorPHEmployeeApp extends JFrame {
 
-    private JTable employeeTable;
-    private JTextField txtEmployeeId;
-    private JTextField txtFirstName;
-    private JTextField txtLastName;
-    private JTextField txtDepartment;
-    private JTextField txtPosition;
-    private JTextField txtSalary;
+    // ============================
+    // DATA
+    // ============================
 
-    public MotorPHEmployeeApp() {
+    static Map<String, String[]> employees = new HashMap<>();
+    static java.util.List<String[]> attendance = new ArrayList<>();
 
-        setTitle("MotorPH Employee Management System");
-        setSize(1000, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+    static String[] empHeaders;
+    static String[] attHeaders;
 
-        initHeader();
-        initSidebar();
-        initMainContent();
-    }
+    JTextField usernameField;
+    JPasswordField passwordField;
 
-    private void initHeader() {
-
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(25, 42, 86));
-        headerPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
-
-        JLabel titleLabel = new JLabel("MotorPH Employee Management System");
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-
-        add(headerPanel, BorderLayout.NORTH);
-    }
-
-    private void initSidebar() {
-
-        JPanel sidebarPanel = new JPanel();
-        sidebarPanel.setLayout(new GridLayout(8, 1, 10, 10));
-        sidebarPanel.setBackground(new Color(44, 62, 80));
-        sidebarPanel.setPreferredSize(new Dimension(200, 0));
-        sidebarPanel.setBorder(new EmptyBorder(20, 15, 20, 15));
-
-        String[] menuItems = {
-                "Dashboard",
-                "Employees",
-                "Attendance",
-                "Payroll",
-                "Departments",
-                "Reports",
-                "Settings",
-                "Logout"
-        };
-
-        for (String item : menuItems) {
-
-            JButton button = new JButton(item);
-            button.setFocusPainted(false);
-            button.setBackground(new Color(52, 73, 94));
-            button.setForeground(Color.WHITE);
-
-            sidebarPanel.add(button);
-        }
-
-        add(sidebarPanel, BorderLayout.WEST);
-    }
-
-    private void initMainContent() {
-
-        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
-        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JPanel formPanel = createFormPanel();
-        JScrollPane tablePanel = createTablePanel();
-
-        mainPanel.add(formPanel, BorderLayout.NORTH);
-        mainPanel.add(tablePanel, BorderLayout.CENTER);
-
-        add(mainPanel, BorderLayout.CENTER);
-    }
-
-    private JPanel createFormPanel() {
-
-        JPanel panel = new JPanel(new GridBagLayout());
-
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        txtEmployeeId = new JTextField(15);
-        txtFirstName = new JTextField(15);
-        txtLastName = new JTextField(15);
-        txtDepartment = new JTextField(15);
-        txtPosition = new JTextField(15);
-        txtSalary = new JTextField(15);
-
-        addFormField(panel, gbc, 0, "Employee ID:", txtEmployeeId);
-        addFormField(panel, gbc, 1, "First Name:", txtFirstName);
-        addFormField(panel, gbc, 2, "Last Name:", txtLastName);
-        addFormField(panel, gbc, 3, "Department:", txtDepartment);
-        addFormField(panel, gbc, 4, "Position:", txtPosition);
-        addFormField(panel, gbc, 5, "Salary:", txtSalary);
-
-        JButton btnAdd = new JButton("Add Employee");
-
-        btnAdd.addActionListener(e -> addEmployee());
-
-        gbc.gridx = 0;
-        gbc.gridy = 6;
-        gbc.gridwidth = 2;
-
-        panel.add(btnAdd, gbc);
-
-        return panel;
-    }
-
-    private void addFormField(
-            JPanel panel,
-            GridBagConstraints gbc,
-            int row,
-            String labelText,
-            JTextField textField
-    ) {
-
-        gbc.gridx = 0;
-        gbc.gridy = row;
-
-        JLabel label = new JLabel(labelText);
-
-        panel.add(label, gbc);
-
-        gbc.gridx = 1;
-
-        panel.add(textField, gbc);
-    }
-
-    private JScrollPane createTablePanel() {
-
-        String[] columns = {
-                "Employee ID",
-                "First Name",
-                "Last Name",
-                "Department",
-                "Position",
-                "Salary"
-        };
-
-        DefaultTableModel model = new DefaultTableModel(columns, 0);
-
-        employeeTable = new JTable(model);
-
-        JScrollPane scrollPane = new JScrollPane(employeeTable);
-
-        return scrollPane;
-    }
-
-    private void addEmployee() {
-
-        DefaultTableModel model =
-                (DefaultTableModel) employeeTable.getModel();
-
-        model.addRow(new Object[]{
-
-                txtEmployeeId.getText(),
-                txtFirstName.getText(),
-                txtLastName.getText(),
-                txtDepartment.getText(),
-                txtPosition.getText(),
-                txtSalary.getText()
-        });
-
-        clearFields();
-    }
-
-    private void clearFields() {
-
-        txtEmployeeId.setText("");
-        txtFirstName.setText("");
-        txtLastName.setText("");
-        txtDepartment.setText("");
-        txtPosition.setText("");
-        txtSalary.setText("");
-    }
+    // ============================
+    // MAIN
+    // ============================
 
     public static void main(String[] args) {
 
-        SwingUtilities.invokeLater(() -> {
+        try {
+            loadEmployees("Employee Details.csv");
+            loadAttendance("Attendance Record.csv");
 
-            new MotorPHEmployeeApp().setVisible(true);
-        });
+            SwingUtilities.invokeLater(() -> {
+                new MotorPHEmployeeApp();
+            });
+
+        } catch (Exception e) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error Loading CSV Files\n" + e.getMessage()
+            );
+        }
+    }
+
+    // ============================
+    // LOGIN FRAME
+    // ============================
+
+    public MotorPHEmployeeApp() {
+
+        setTitle("MotorPHEmployeeApp - Login");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(6, 1, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        panel.setBackground(new Color(245, 247, 250));
+
+        JLabel title = new JLabel("MotorPH Employee System");
+        title.setHorizontalAlignment(SwingConstants.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+
+        usernameField = new JTextField();
+        passwordField = new JPasswordField();
+
+        JButton loginButton = new JButton("Login");
+
+        panel.add(title);
+        panel.add(new JLabel("Username"));
+        panel.add(usernameField);
+        panel.add(new JLabel("Password"));
+        panel.add(passwordField);
+        panel.add(loginButton);
+
+        add(panel);
+
+        loginButton.addActionListener(e -> login());
+
+        setVisible(true);
+    }
+
+    // ============================
+    // LOGIN FUNCTION
+    // ============================
+
+    void login() {
+
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+
+        if (username.equalsIgnoreCase("employee")
+                && password.equals("12345")) {
+
+            dispose();
+            new EmployeeDashboard();
+
+        } else if ((username.equalsIgnoreCase("payroll_staff")
+                || username.equalsIgnoreCase("payroll staff"))
+                && password.equals("12345")) {
+
+            dispose();
+            new PayrollDashboard();
+
+        } else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Invalid Username or Password"
+            );
+        }
+    }
+
+    // ============================
+    // EMPLOYEE DASHBOARD
+    // ============================
+
+    static class EmployeeDashboard extends JFrame {
+
+        JTextField empField;
+        JTextArea area;
+
+        EmployeeDashboard() {
+
+            setTitle("Employee Dashboard");
+            setSize(500, 400);
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            setLocationRelativeTo(null);
+            setLayout(new BorderLayout());
+
+            JPanel topPanel = new JPanel();
+            topPanel.setBackground(new Color(230, 235, 245));
+
+            topPanel.add(new JLabel("Employee Number:"));
+
+            empField = new JTextField(10);
+            topPanel.add(empField);
+
+            JButton searchButton = new JButton("Search");
+            topPanel.add(searchButton);
+
+            add(topPanel, BorderLayout.NORTH);
+
+            area = new JTextArea();
+            area.setEditable(false);
+            area.setFont(new Font("Monospaced", Font.PLAIN, 14));
+
+            add(new JScrollPane(area), BorderLayout.CENTER);
+
+            JPanel bottomPanel = new JPanel();
+            JButton logoutButton = new JButton("Logout");
+            bottomPanel.add(logoutButton);
+
+            add(bottomPanel, BorderLayout.SOUTH);
+
+            searchButton.addActionListener(e -> showEmployee());
+
+            logoutButton.addActionListener(e -> {
+                dispose();
+                new MotorPHEmployeeApp();
+            });
+
+            setVisible(true);
+        }
+
+        void showEmployee() {
+
+            String empNum = empField.getText().trim();
+
+            if (!employees.containsKey(empNum)) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Employee Not Found"
+                );
+                return;
+            }
+
+            String[] emp = employees.get(empNum);
+
+            String firstName =
+                    emp[getIndex(empHeaders, "First Name")];
+
+            String lastName =
+                    emp[getIndex(empHeaders, "Last Name")];
+
+            String birthday =
+                    emp[getIndex(empHeaders, "Birthday")];
+
+            area.setText(
+                    "Employee #: " + empNum + "\n\n" +
+                    "Name: " + firstName + " " + lastName + "\n\n" +
+                    "Birthday: " + birthday
+            );
+        }
+    }
+
+    // ============================
+    // PAYROLL DASHBOARD
+    // ============================
+
+    static class PayrollDashboard extends JFrame {
+
+        JTextField empField;
+        JTextArea area;
+
+        PayrollDashboard() {
+
+            setTitle("Payroll Dashboard");
+            setSize(700, 500);
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            setLocationRelativeTo(null);
+            setLayout(new BorderLayout());
+
+            JPanel topPanel = new JPanel();
+            topPanel.setBackground(new Color(230, 235, 245));
+
+            topPanel.add(new JLabel("Employee Number:"));
+
+            empField = new JTextField(10);
+            topPanel.add(empField);
+
+            JButton generateButton =
+                    new JButton("Generate Payroll");
+
+            topPanel.add(generateButton);
+
+            add(topPanel, BorderLayout.NORTH);
+
+            area = new JTextArea();
+            area.setEditable(false);
+            area.setFont(new Font("Monospaced", Font.PLAIN, 14));
+
+            add(new JScrollPane(area), BorderLayout.CENTER);
+
+            JPanel bottomPanel = new JPanel();
+
+            JButton logoutButton =
+                    new JButton("Logout");
+
+            bottomPanel.add(logoutButton);
+
+            add(bottomPanel, BorderLayout.SOUTH);
+
+            generateButton.addActionListener(
+                    e -> generatePayroll()
+            );
+
+            logoutButton.addActionListener(e -> {
+                dispose();
+                new MotorPHEmployeeApp();
+            });
+
+            setVisible(true);
+        }
+
+        void generatePayroll() {
+
+            String empNum =
+                    empField.getText().trim();
+
+            if (!employees.containsKey(empNum)) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Employee Not Found"
+                );
+
+                return;
+            }
+
+            String[] emp = employees.get(empNum);
+
+            String name =
+                    emp[getIndex(empHeaders, "First Name")]
+                    + " " +
+                    emp[getIndex(empHeaders, "Last Name")];
+
+            double hourlyRate =
+                    Double.parseDouble(
+                            emp[getIndex(empHeaders,
+                                    "Hourly Rate")]
+                                    .replace(",", "")
+                                    .replace("\"", "")
+                                    .trim()
+                    );
+
+            int empIndex =
+                    getIndexFlexible(
+                            attHeaders,
+                            "Employee #"
+                    );
+
+            int loginIndex =
+                    getIndexFlexible(
+                            attHeaders,
+                            "Log In",
+                            "Time In"
+                    );
+
+            int logoutIndex =
+                    getIndexFlexible(
+                            attHeaders,
+                            "Log Out",
+                            "Time Out"
+                    );
+
+            double totalHours = 0;
+
+            for (String[] row : attendance) {
+
+                if (row[empIndex].equals(empNum)) {
+
+                    double login =
+                            parseTime(row[loginIndex]);
+
+                    double logout =
+                            parseTime(row[logoutIndex]);
+
+                    double workedHours =
+                            logout - login;
+
+                    if (workedHours > 5) {
+                        workedHours -= 1;
+                    }
+
+                    totalHours += workedHours;
+                }
+            }
+
+            double gross =
+                    totalHours * hourlyRate;
+
+            double sss = gross * 0.05;
+            double philhealth = gross * 0.03;
+            double pagibig = 50;
+            double tax = gross * 0.10;
+
+            double deductions =
+                    sss + philhealth + pagibig + tax;
+
+            double net =
+                    gross - deductions;
+
+            area.setText(
+                    "Employee #: " + empNum + "\n\n" +
+                    "Name: " + name + "\n\n" +
+                    String.format(
+                            "Hours Worked: %.2f\n",
+                            totalHours
+                    ) +
+                    String.format(
+                            "Gross Salary: %.2f\n",
+                            gross
+                    ) +
+                    String.format(
+                            "SSS: %.2f\n",
+                            sss
+                    ) +
+                    String.format(
+                            "PhilHealth: %.2f\n",
+                            philhealth
+                    ) +
+                    String.format(
+                            "Pag-IBIG: %.2f\n",
+                            pagibig
+                    ) +
+                    String.format(
+                            "Tax: %.2f\n",
+                            tax
+                    ) +
+                    String.format(
+                            "Net Salary: %.2f\n",
+                            net
+                    )
+            );
+        }
+    }
+
+    // ============================
+    // CSV FUNCTIONS
+    // ============================
+
+    static void loadEmployees(String file)
+            throws Exception {
+
+        BufferedReader br =
+                new BufferedReader(
+                        new FileReader(file)
+                );
+
+        empHeaders =
+                splitCSV(br.readLine());
+
+        String line;
+
+        while ((line = br.readLine()) != null) {
+
+            String[] row =
+                    splitCSV(line);
+
+            employees.put(
+                    row[getIndex(
+                            empHeaders,
+                            "Employee #"
+                    )],
+                    row
+            );
+        }
+
+        br.close();
+    }
+
+    static void loadAttendance(String file)
+            throws Exception {
+
+        BufferedReader br =
+                new BufferedReader(
+                        new FileReader(file)
+                );
+
+        attHeaders =
+                splitCSV(br.readLine());
+
+        String line;
+
+        while ((line = br.readLine()) != null) {
+
+            attendance.add(
+                    splitCSV(line)
+            );
+        }
+
+        br.close();
+    }
+
+    // ============================
+    // UTILITIES
+    // ============================
+
+    static String[] splitCSV(String line) {
+
+        return line.split(
+                ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"
+        );
+    }
+
+    static int getIndex(
+            String[] headers,
+            String name
+    ) {
+
+        for (int i = 0; i < headers.length; i++) {
+
+            if (headers[i]
+                    .trim()
+                    .equalsIgnoreCase(name)) {
+
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    static int getIndexFlexible(
+            String[] headers,
+            String... names
+    ) {
+
+        for (int i = 0; i < headers.length; i++) {
+
+            String current =
+                    headers[i]
+                            .toLowerCase()
+                            .replace(" ", "");
+
+            for (String n : names) {
+
+                if (current.equals(
+                        n.toLowerCase()
+                                .replace(" ", "")
+                )) {
+
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    static double parseTime(String time) {
+
+        String[] p = time.split(":");
+
+        return Integer.parseInt(p[0]) +
+                Integer.parseInt(p[1]) / 60.0;
     }
 }
